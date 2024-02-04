@@ -40,33 +40,31 @@ Padding inputField() {
 }
 
 Container outputChannel() {
-  // final myController = YoutubePlayerController(
-  //   params: YoutubePlayerParams(
-  //     mute: false,
-  //     showControls: true,
-  //     showFullscreenButton: true,
-  //   ),
-  // );
-
+  final myController = YoutubePlayerController(
+    params: const YoutubePlayerParams(
+      mute: false,
+      showControls: true,
+      showFullscreenButton: true,
+    ),
+  );
+  myController.loadVideoById(videoId: 'grd-K33tOSM', startSeconds:10, endSeconds: 20);
+  // myController.loadPlaylist(list:['grd-K33tOSM', 'MtN1YnoL46Q'], startSeconds: 30);
   // myController.loadVideoById(...); // Auto Play
   // myController.cueVideoById(...); // Manual Play
   // myController.loadPlaylist(...); // Auto Play with playlist
   // myController.cuePlaylist(...); // Manual Play with playlist
 
   // If the requirement is just to play a single video.
-  final myController = YoutubePlayerController.fromVideoId(
-    videoId: 'grd-K33tOSM',
-    autoPlay: false,
-    params: const YoutubePlayerParams(showFullscreenButton: true),
-  );
+  // final myController = YoutubePlayerController.fromVideoId(
+  //   videoId: 'grd-K33tOSM',
+  //   autoPlay: false,
+  //   params: const YoutubePlayerParams(showFullscreenButton: true),
+  // );
   return Container(
-    child: YoutubePlayer(
-      controller: myController,
-      aspectRatio: 16 / 9,
-      
-    )
-
-  );
+      child: YoutubePlayer(
+    controller: myController,
+    aspectRatio: 16 / 9,
+  ));
 }
 
 // YoutubePlayer outputChannel(YoutubePlayerController controller) {
