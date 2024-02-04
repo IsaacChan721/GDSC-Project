@@ -1,7 +1,6 @@
 PROJECT_ID = "vital-domain-412522"
 REGION = "us-central1"
 
-
 import vertexai
 from vertexai.preview.generative_models import GenerativeModel, Part
 import webbrowser
