@@ -30,7 +30,6 @@ class _HomePageState extends State<HomePage> {
           bottom: PreferredSize(
               preferredSize: const Size.fromHeight(0.4),
               child: Container(
-                  // color: const Color.fromARGB(255, 185, 162, 224),
                   color: Colors.red[300],
                   height: 2.0))),
       body: Center(
@@ -69,9 +68,11 @@ class _HomePageState extends State<HomePage> {
     if (userInput == '') return;
     setState(() {
       isSearching = true;
+      searchActive = false;
     });
     await sendPrompt(userInput);
     videoIDs = await fetchData();
+    print(videoIDs);
     userInputTextController.text = '';
     setState(() {
       isSearching = false;

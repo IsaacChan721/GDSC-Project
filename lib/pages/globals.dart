@@ -1,4 +1,4 @@
-const String appName = "Youtube Pro Max Plus";
+const String appName = "Youtube Academy";
 
 bool searchActive = false;
 bool isSearching = false;

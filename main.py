@@ -65,8 +65,9 @@ def has_transcript(video_id):
     t = TranscriptListFetcher(requests.Session())
     try:
         t._extract_captions_json(t._fetch_video_html(video_id), video_id)
+        yta.list_transcripts(video_id).find_transcript(['en', 'en-US'])
+
     except (TranscriptsDisabled, NoTranscriptAvailable, NoTranscriptFound):
-        #print("No transcripts")
         return False
     return True
 
@@ -89,8 +90,6 @@ def get_video_transcript(video_id):
     merged_text.append(temp_text)
     return merged_text, merged_time
    
-# user_input = input("Give me something to work with?: ")
-
 def contextualize(user_input):
     teach = "Create a list in python format of words containing the 5 most prominent key words using the following string: "
     print("Contextualizing Data...")
@@ -107,7 +106,8 @@ def search_videos(context):
     response = youtube.search().list(
         q=context,
         part='id,snippet',
-        maxResults=8
+        maxResults=8,
+        eventType ="none"
     ).execute()
 
     video_ids = [item['id']['videoId'] for item in response['items'] if item['id']['kind'] == 'youtube#video']
@@ -147,7 +147,8 @@ def select_video(video_urls):
         try:
             vid_num = -1
             while not (1 <= vid_num <= len(video_urls)):
-                video_time_string = input(f"Which video and time interval would you like to watch? (format: Video num: Time interval start-end. num ranges from 1 to {len(video_urls)}): ")
+                video_time_string = 'Video 1: Time interval 1-60'
+                # video_time_string = input(f"Which video and time interval would you like to watch? (format: Video num: Time interval start-end. num ranges from 1 to {len(video_urls)}): ")
                 result_list = []
                 video_info = video_time_string.split(': ')
                 video_number_str = video_info[0].replace('Video ', '')
@@ -177,23 +178,18 @@ def select_video(video_urls):
             print("Sorry, I'm not sure I understand. Maybe be more specific (Preferably in the format of 'Video 1: Time interval 1-10').")
         else:
             break
-
-    print(result_list)
-    final_list = []
-    url = video_urls[result_list[0]] + "&t=" + str(result_list[1][0])
+    url = video_urls[result_list[0]]
+    start = result_list[1][0]
     end = result_list[1][1]
-    final_list.append([url, end])
-    print(final_list)
+    final_list= [url, start, end]
     return final_list
 
 
-def main():
-    user_input = input("Give me something to work with?: ")
+def get_video_ids(prompt):
+    user_input = prompt
     context = contextualize(user_input)
     video_ids = search_videos(context)
     video_urls, texts, timestamps = fetch_video(video_ids)
     contextualize_videos(video_urls, texts, timestamps)
     final_list = select_video(video_urls)
     return final_list
-
-main()

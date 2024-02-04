@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:youtube_player_iframe/youtube_player_iframe.dart';
 import 'package:flutter/cupertino.dart';
 import 'globals.dart';
+// import 'carousel.dart';
 
+List savedSessions = [];
 Container debugBox({required Widget child, required Color color}) {
   return Container(
       decoration: BoxDecoration(border: Border.all(color: color)),
@@ -23,8 +25,6 @@ FractionallySizedBox chatContainer(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          // youtubeEmbed(context),
-          // promptField(myController),
           Expanded(
             child: outputChannel(videoIDs),
           ),
@@ -101,33 +101,22 @@ Container outputChannel(List videoIDs) {
         ),
       ],
     ));
-    // return Container(
-    //     child: SizedBox(
-    //       width: 300,
-    //       height: 300,
-    //       child: AspectRatio(
-    //         aspectRatio: 1,
-    //         child: CircularProgressIndicator(
-    //           color: Colors.red[300]
-
-    //         ),
-    //       ),
-    //     )
-
-    // );
   }
-  if (videoIDs.isNotEmpty) {
-    String s = "";
-    for (String v in videoIDs) {
-      s += v + ", ";
-      print(v);
-    }
+
+  if (videoIDs.isNotEmpty && !savedSessions.contains(videoIDs)) {
+
+    // List<Widget> videoWidgets = [];
+    // for (String vID in videoIDs) {
+    //   videoWidgets.add(youtubeEmbed(vID, 0, 50));
+    // }
+    print('Save session');
+    savedSessions.add(videoIDs);
 
     return Container(
-      child: Center(child: Text(s)),
-    );
+        width: 800, child: youtubeEmbed(videoIDs[0].split('=')[1], 0, 40)
+        // child: videoCarousel(videoWidgets),
+        );
   }
-  // const CircularProgressIndicator();
   return Container(
     child: Center(child: landingWelcome()),
   );
@@ -156,32 +145,18 @@ Column landingWelcome() {
   );
 }
 
-SizedBox youtubeEmbed(BuildContext context, String videoID, double startSeconds,
-    double endSeconds) {
+SizedBox youtubeEmbed(String videoID, double startSeconds, double endSeconds) {
   final myController = YoutubePlayerController(
-    params: const YoutubePlayerParams(
-      mute: false,
-      showControls: true,
-      showFullscreenButton: true,
-    ),
-  );
+  params: const YoutubePlayerParams(
+    mute: false,
+    showControls: true,
+    showFullscreenButton: true,
+  ),
+);
   myController.loadVideoById(
-      videoId: videoID, startSeconds: startSeconds, endSeconds: endSeconds);
-  // videoId: 'grd-K33tOSM', startSeconds: 10, endSeconds: 20);
-  // myController.loadPlaylist(list:['grd-K33tOSM', 'MtN1YnoL46Q'], startSeconds: 30);
-  // myController.loadVideoById(...); // Auto Play
-  // myController.cueVideoById(...); // Manual Play
-  // myController.loadPlaylist(...); // Auto Play with playlist
-  // myController.cuePlaylist(...); // Manual Play with playlist
-
-  // If the requirement is just to play a single video.
-  // final myController = YoutubePlayerController.fromVideoId(
-  //   videoId: 'grd-K33tOSM',
-  //   autoPlay: false,
-  //   params: const YoutubePlayerParams(showFullscreenButton: true),
-  // );
+      videoId: videoID);
   return SizedBox(
-    width: MediaQuery.of(context).size.width / 2,
+    width: 600,
     child: AspectRatio(
       aspectRatio: 16 / 9,
       child: YoutubePlayer(
@@ -206,12 +181,11 @@ Opacity searchBtn(Function func) {
         CupertinoIcons.paperplane,
         color: Colors.white,
       ),
-      // icon: const Icon(Icons.arrow_forward, color: Colors.deepPurple),
       onPressed: () {
         searchActive ? func() : null;
       },
       style: IconButton.styleFrom(
-          backgroundColor: Color.fromARGB(221, 34, 33, 33),
+          backgroundColor: const Color.fromARGB(221, 34, 33, 33),
           fixedSize: const Size(36, 36),
           shape: const CircleBorder()),
     ),
