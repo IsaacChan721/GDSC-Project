@@ -88,6 +88,4 @@ def main():
             video_urls.append(video_url)
     print("video count:", len(video_urls))
 
-    for url in video_urls:
-        webbrowser.open(url)
     return video_urls
