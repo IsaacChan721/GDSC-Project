@@ -91,15 +91,15 @@ def get_video_transcript(video_id):
     merged_text.append(temp_text)
     return merged_text, merged_time
     
-# Main code
-# user_input = input("Give me something to work with?: ")
-# teach = "Create a list in python format of words containing the 5 most prominent key words using the following string: "
-# results = generate_text(PROJECT_ID, REGION, user_input)
-# context = generate_text(PROJECT_ID, REGION, results, teach)
+user_input = input("Give me something to work with?: ")
+teach = "Create a list in python format of words containing the 5 most prominent key words using the following string: "
 
-# context = string_to_list(context)
-# print(context)
-context = ["red", "orange", "yellow", "green", "blue"]
+print("Contextualizing Data...")
+results = generate_text(PROJECT_ID, REGION, user_input)
+context = generate_text(PROJECT_ID, REGION, results, teach)
+
+context = string_to_list(context)
+
 youtube = build('youtube', 'v3', developerKey=API_KEY)
 
 response = youtube.search().list(
@@ -111,32 +111,55 @@ response = youtube.search().list(
 video_ids = [item['id']['videoId'] for item in response['items'] if item['id']['kind'] == 'youtube#video']
 
 video_urls = []
-# bad_videos = []
+bad_videos = []
+
+print("Searching for Videos...")
 
 for video_id in video_ids:
-    print(video_id)
+    #print(video_id)
     video = get_video(video_id, API_KEY)
     duration_seconds = get_video_duration(video)
     view_count = get_video_view_count(video)
     text, timestamp = [], []
     if duration_seconds <= MAX_DURATION and view_count >= MIN_VIEW_COUNT and has_transcript(video_id):
-        print("good vid")
+        #print("good vid")
         text, timestamp = get_video_transcript(video_id)
-        print(text)
         video_url = f"https://www.youtube.com/watch?v={video_id}"
         video_urls.append(video_url)
     else:
-        print("bad vid")
-        # bad_videos.append(video_id)
+        #print("bad vid")
+        bad_videos.append(video_id)
+        video_ids.remove(video_id)
 
-# print("Videos with no transcript:", len(bad_videos))
-# print("Video count with transcript:", len(video_urls))
+print("Fetching Video Data...")
 
-# The rest of your code
-#merged_time, merged_text = get_video_transcript(video_ids[0])
+teach = "Take the following data, time and text respectively, and identify the important most relevant time intervals in the video: "
+time_intervals = []
 
-# teach = "Take the following data, time and text respectively, and identify the important time intervals in the video using the given context: " + str(context)
-# time_intervals = generate_text(PROJECT_ID, REGION, np.array((merged_time, merged_text)), teach)
+for i in range(len(video_ids)):
+    merged_text, merged_time = get_video_transcript(video_ids[i])
+    time_intervals.append(generate_text(PROJECT_ID, REGION, str(np.array((merged_time, merged_text))), teach))
 
+pprint(time_intervals)
 
-#return video_urls
+teach = "Find the video/s and time interval/s mentioned in the response given in the following format: Video 1: Time interval 6-10, Video 2: Time interval 5-10, etc."
+
+while True:
+    try:
+        video_time_string = (generate_text(PROJECT_ID, REGION, input("Which video/s and time interval/s would you like to watch?: "), teach))
+
+        video_time_list = video_time_string.split(', ')
+        result_list = []
+
+        for video_time in video_time_list:
+            video_info = video_time.split(': ')
+            video_number = int(video_info[0].replace('Video ', ''))
+            time_interval = list(map(int, video_info[1].replace('Time interval ', '').split('-')))
+            result_list.append([video_number, time_interval])
+    except Exception as e:
+        print(e)
+        print("Sorry, I'm not sure I understand. Maybe be more specific.")
+    else:
+        break
+
+print(result_list)    
