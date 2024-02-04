@@ -107,7 +107,7 @@ def search_videos(context):
     response = youtube.search().list(
         q=context,
         part='id,snippet',
-        maxResults=5
+        maxResults=8
     ).execute()
 
     video_ids = [item['id']['videoId'] for item in response['items'] if item['id']['kind'] == 'youtube#video']
@@ -134,10 +134,10 @@ def fetch_video(video_ids):
     return video_urls, texts, timestamps
 
 def contextualize_videos(video_urls, texts, timestamps):
-    print("contextualizing Videos...")
+    print("Contextualizing Videos...")
     teach = "Take the following data, time and text respectively, and identify the important most relevant time intervals in the video: "
     time_intervals = []
-    for i in range(len(video_urls)):
+    for i in range(min(3,len(video_urls))):
         time_intervals.append(generate_text(PROJECT_ID, REGION, str(np.array((timestamps[i], texts[i]))), teach))
 
     pprint(time_intervals)
@@ -145,18 +145,20 @@ def contextualize_videos(video_urls, texts, timestamps):
 def select_video(video_urls):
     while True:
         try:
-            video_time_string = input("Which video/s and time interval/s would you like to watch? (format: Video num: Time interval start-end): ")
-            result_list = []
-            video_info = video_time_string.split(': ')
-            video_number_str = video_info[0].replace('Video ', '')
-            time_interval_str = video_info[1].replace('Time interval ', '')
-    
-            try:
-                # Try to convert the video number to an integer
-                vid_num = int(video_number_str)
-            except ValueError:
-                print(f"Error: Invalid video number format - {video_number_str}")
-                continue
+            vid_num = -1
+            while not (1 <= vid_num <= len(video_urls)):
+                video_time_string = input(f"Which video and time interval would you like to watch? (format: Video num: Time interval start-end. num ranges from 1 to {len(video_urls)}): ")
+                result_list = []
+                video_info = video_time_string.split(': ')
+                video_number_str = video_info[0].replace('Video ', '')
+                time_interval_str = video_info[1].replace('Time interval ', '')
+        
+                try:
+                    # Try to convert the video number to an integer
+                    vid_num = int(video_number_str)
+                except ValueError:
+                    print(f"Error: Invalid video number format - {video_number_str}")
+                    continue
 
             # Split the time interval string and convert to integers
             time_interval = time_interval_str.split('-')
