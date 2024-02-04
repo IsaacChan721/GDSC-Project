@@ -9,13 +9,13 @@ from settings import API_KEY
 from pprint import pprint
 from youtube_transcript_api import YouTubeTranscriptApi as yta
 import re
-import numpy
+import numpy as np
 
 MAX_DURATION = 1200
 MIN_VIEW_COUNT = 100000
 
 
-def generate_text(project_id: str, location: str, user_input, simplify = False) -> str:
+def generate_text(project_id: str, location: str, user_input, teach = "") -> str:
     # Initialize Vertex AI
     vertexai.init(project=project_id, location=location)
     # Load the model
@@ -23,8 +23,8 @@ def generate_text(project_id: str, location: str, user_input, simplify = False) 
     # Query the model
     response = multimodal_model.generate_content(
         [
-            user_input if not simplify
-            else "Create a list in python format of words containing the 5 most prominent key words using the following string: " + user_input
+            user_input if teach == ""
+            else teach + user_input
         ]
     )
     return response.text
@@ -64,8 +64,8 @@ def get_video_view_count(video):
 
 def get_video_transcript(video_id):
     transcript = yta.get_transcript(video_id, languages=('en', 'English')) 
-    text = numpy.array([dictionary["text"] for dictionary in transcript])
-    time = numpy.array([dictionary["start"] for dictionary in transcript])
+    text = np.array([dictionary["text"] for dictionary in transcript])
+    time = np.array([dictionary["start"] for dictionary in transcript])
 
     merged_text = []
     temp_text = ""
@@ -83,8 +83,9 @@ def get_video_transcript(video_id):
 
 #def main():
 user_input = input("Give me something to work with?: ")
+teach = "Create a list in python format of words containing the 5 most prominent key words using the following string: "
 results = generate_text(PROJECT_ID, REGION, user_input)
-context = generate_text(PROJECT_ID, REGION, results)
+context = generate_text(PROJECT_ID, REGION, results, teach)
 
 context = string_to_list(context)
 print(context)
@@ -113,5 +114,10 @@ for video_id in video_ids:
         video_url = f"https://www.youtube.com/watch?v={video_id}"
         video_urls.append(video_url)
 print("video count:", len(video_urls))
+
+merged_time, merged_text = get_video_transcript(video_ids[0])
+
+teach = "Take the following transcript and identify the important time intervals using the given context: " + str(context)
+time_intervals = generate_text(PROJECT_ID, REGION, np.array(merged_time, merged_text), teach)
 
 #return video_urls
