@@ -9,6 +9,7 @@ from settings import API_KEY
 from pprint import pprint
 from youtube_transcript_api import YouTubeTranscriptApi as yta
 import re
+import numpy
 
 MAX_DURATION = 1200
 MIN_VIEW_COUNT = 100000
@@ -61,33 +62,29 @@ def get_video_duration(video):
 def get_video_view_count(video):
     return int(video["items"][0]["statistics"]["viewCount"])
 
-def print_time(search_word,time):
-    print(f"'{search_word}' was mentioned at:")
-    # calculate the accurate time according to the video's duration
-    for t in time:
-        hours = int(t // 3600)
-        min = int((t // 60) % 60)
-        sec = int(t % 60)
-        print(f"{hours:02d}:{min:02d}:{sec:02d}")
+def get_video_transcript(video_id):
+    transcript = yta.get_transcript(video_id, languages=('en', 'English')) 
+    text = numpy.array([dictionary["text"] for dictionary in transcript])
+    time = numpy.array([dictionary["start"] for dictionary in transcript])
 
-def get_video_transcript(youtube, video_id):
-    video_id = "1aA1WGON49E"
-    transcript = yta.get_transcript(video_id, languages=('tr', 'Turkish')) 
-    data = [t['text'] for t in transcript]
-    data = [re.sub(r"[^a-zA-Z0–9-ışğöüçiIŞĞÖÜÇİ ]", "", line) for line in data]
-    search_word = "Facebook"
-    time = []
-    for i, line in enumerate(data):
-        if search_word in line:
-            start_time = transcript[i]['start']
-            time.append(start_time)
-    print_time(search_word, time)
-    
+    merged_text = []
+    temp_text = ""
+    merged_time = [0]
+
+    for i in range (0, len(text)):
+        if i % 5 == 0 and i != 0:
+            merged_text.append(temp_text)
+            merged_time.append(round(time[i], 3))
+            temp_text = text[i]
+        else:
+            temp_text += (" " + text[i])
+    merged_text.append(temp_text)
+    return merged_text, merged_time
 
 #def main():
 user_input = input("Give me something to work with?: ")
 results = generate_text(PROJECT_ID, REGION, user_input)
-context = generate_text(PROJECT_ID, REGION, results, True)
+context = generate_text(PROJECT_ID, REGION, results)
 
 context = string_to_list(context)
 print(context)
@@ -97,19 +94,22 @@ youtube = build('youtube', 'v3', developerKey=API_KEY)
 response = youtube.search().list(
     q= context,
     part='id,snippet',
-    maxResults=10
+    maxResults=5
 ).execute()
 
 video_ids = [item['id']['videoId'] for item in response['items'] if item['id']['kind'] == 'youtube#video']
 
 video_urls = []
 for video_id in video_ids:
+    print(video_id)
     video  = get_video(video_id, API_KEY)
-    get_video_transcript(youtube, video_id)
     duration_seconds = get_video_duration(video)
     view_count = get_video_view_count(video)
 
     if duration_seconds <= MAX_DURATION and view_count >= MIN_VIEW_COUNT:
+        print("good vid")
+        text, timestamp = get_video_transcript(video_id)
+        print(text)
         video_url = f"https://www.youtube.com/watch?v={video_id}"
         video_urls.append(video_url)
 print("video count:", len(video_urls))
