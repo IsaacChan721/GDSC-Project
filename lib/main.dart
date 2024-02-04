@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'pages/home.dart';
+import 'pages/globals.dart';
 
 void main() {
   runApp(const MyApp());
@@ -15,9 +16,10 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'YT Copilot',
       theme: ThemeData(
+        primarySwatch: Colors.red,
         useMaterial3: true,
       ),
-      home: const HomePage(title: 'Youtube Copilot'),
+      home: const HomePage(title: appName),
     );
   }
 }
