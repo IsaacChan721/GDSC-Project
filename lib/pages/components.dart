@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:youtube_player_flutter/youtube_player_flutter.dart';
+import 'package:youtube_player_iframe/youtube_player_iframe.dart';
 
 Container debugBox({required Widget child, required Color color}) {
   return Container(
@@ -7,7 +7,7 @@ Container debugBox({required Widget child, required Color color}) {
       child: child);
 }
 
-FractionallySizedBox chatContainer(YoutubePlayerController controller) {
+FractionallySizedBox chatContainer() {
   return FractionallySizedBox(
       widthFactor: 0.7,
       heightFactor: 0.9,
@@ -19,7 +19,7 @@ FractionallySizedBox chatContainer(YoutubePlayerController controller) {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              outputChannel(controller),
+              outputChannel(),
               inputField(),
             ],
           ),
@@ -39,23 +39,53 @@ Padding inputField() {
   );
 }
 
-YoutubePlayer outputChannel(YoutubePlayerController controller) {
-  // String videoId;
-  // videoId = YoutubePlayer.convertUrlToId(
-  //     "https://www.youtube.com/watch?v=snYu2JUqSWs") as String;
-  // YoutubePlayerController controller = YoutubePlayerController(
-  //   initialVideoId: videoId,
-  //   flags: const YoutubePlayerFlags(
-  //     autoPlay: true,
-  //     mute: true,
+Container outputChannel() {
+  // final myController = YoutubePlayerController(
+  //   params: YoutubePlayerParams(
+  //     mute: false,
+  //     showControls: true,
+  //     showFullscreenButton: true,
   //   ),
   // );
-  print('hi');
-  return YoutubePlayer(
-    controller: controller,
-    showVideoProgressIndicator: true,
-    onReady: () {
-      print('Player is ready.');
-    },
+
+  // myController.loadVideoById(...); // Auto Play
+  // myController.cueVideoById(...); // Manual Play
+  // myController.loadPlaylist(...); // Auto Play with playlist
+  // myController.cuePlaylist(...); // Manual Play with playlist
+
+  // If the requirement is just to play a single video.
+  final myController = YoutubePlayerController.fromVideoId(
+    videoId: 'grd-K33tOSM',
+    autoPlay: false,
+    params: const YoutubePlayerParams(showFullscreenButton: true),
+  );
+  return Container(
+    child: YoutubePlayer(
+      controller: myController,
+      aspectRatio: 16 / 9,
+      
+    )
+
   );
 }
+
+// YoutubePlayer outputChannel(YoutubePlayerController controller) {
+//   // String videoId;
+//   // videoId = YoutubePlayer.convertUrlToId(
+//   //     "https://www.youtube.com/watch?v=snYu2JUqSWs") as String;
+//   // YoutubePlayerController controller = YoutubePlayerController(
+//   //   initialVideoId: videoId,
+//   //   flags: const YoutubePlayerFlags(
+//   //     autoPlay: true,
+//   //     mute: true,
+//   //   ),
+//   // );
+//   print('hi');
+//   return YoutubePlayer(
+//     controller: controller,
+//     showVideoProgressIndicator: true,
+//     onReady: () {
+//       print('Player is ready.');
+//     },
+//   );
+// }

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'components.dart';
-import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key, required this.title});
@@ -12,7 +11,7 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  YoutubePlayerController? myController;
+  // YoutubePlayerController? myController;
   // int _counter = 0;
 
   // void _incrementCounter() {
@@ -21,25 +20,26 @@ class _HomePageState extends State<HomePage> {
   //   });
   // }
 
-  @override
-  void initState() {
-    String testURL = "https://www.youtube.com/watch?v=snYu2JUqSWs";
-    String testID = YoutubePlayer.convertUrlToId(testURL) as String;
-    myController = YoutubePlayerController(
-      initialVideoId: testID,
-      flags: const YoutubePlayerFlags(
-          mute: false,
-          autoPlay: true,
-          disableDragSeek: true,
-          loop: false,
-          enableCaption: false),
-    );
+  // @override
+  // void initState() {
+  //   String testURL = "https://www.youtube.com/watch?v=snYu2JUqSWs";
+  //   String testID = YoutubePlayer.convertUrlToId(testURL) as String;
+  //   myController = YoutubePlayerController(
+  //     initialVideoId: testID,
+  //     flags: const YoutubePlayerFlags(
+  //         mute: false,
+  //         autoPlay: true,
+  //         disableDragSeek: true,
+  //         loop: false,
+  //         enableCaption: false),
+  //   );
 
-    super.initState();
-  }
+  //   super.initState();
+  // }
 
   @override
   Widget build(BuildContext context) {
+
     // This method is rerun every time setState is called
     return Scaffold(
       appBar: AppBar(
@@ -52,8 +52,10 @@ class _HomePageState extends State<HomePage> {
                   color: const Color.fromARGB(255, 185, 162, 224),
                   height: 2.0))),
       body: Center(
+        child: outputChannel()
           // child: chatContainer()
-          child: outputChannel(myController as YoutubePlayerController)),
+          // child: outputChannel(myController as YoutubePlayerController)
+          ),
       backgroundColor: Colors.white,
     );
   }
