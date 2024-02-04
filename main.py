@@ -73,7 +73,7 @@ def has_transcript(video_id):
     return True
 
 def get_video_transcript(video_id):
-    transcript = yta.get_transcript(video_id, languages=('en', 'English')) 
+    transcript = yta.get_transcript(video_id, languages=['en', 'en-US']) 
     text = np.array([dictionary["text"] for dictionary in transcript])
     time = np.array([dictionary["start"] for dictionary in transcript])
 
@@ -90,7 +90,7 @@ def get_video_transcript(video_id):
             temp_text += (" " + text[i])
     merged_text.append(temp_text)
     return merged_text, merged_time
-    
+   
 user_input = input("Give me something to work with?: ")
 teach = "Create a list in python format of words containing the 5 most prominent key words using the following string: "
 
@@ -99,6 +99,8 @@ results = generate_text(PROJECT_ID, REGION, user_input)
 context = generate_text(PROJECT_ID, REGION, results, teach)
 
 context = string_to_list(context)
+
+print("Searching for Videos...")
 
 youtube = build('youtube', 'v3', developerKey=API_KEY)
 
@@ -111,54 +113,77 @@ response = youtube.search().list(
 video_ids = [item['id']['videoId'] for item in response['items'] if item['id']['kind'] == 'youtube#video']
 
 video_urls = []
-bad_videos = []
 
-print("Searching for Videos...")
-
+print("Fetching Video Data...")
+texts, timestamps = [],[]
 for video_id in video_ids:
-    #print(video_id)
+    print(video_id)
     video = get_video(video_id, API_KEY)
     duration_seconds = get_video_duration(video)
     view_count = get_video_view_count(video)
-    text, timestamp = [], []
     if duration_seconds <= MAX_DURATION and view_count >= MIN_VIEW_COUNT and has_transcript(video_id):
-        #print("good vid")
+        print("good vid")
         text, timestamp = get_video_transcript(video_id)
         video_url = f"https://www.youtube.com/watch?v={video_id}"
         video_urls.append(video_url)
+        texts.append(text)
+        timestamps.append(timestamp)
     else:
-        #print("bad vid")
-        bad_videos.append(video_id)
-        video_ids.remove(video_id)
+        print("bad vid")
 
-print("Fetching Video Data...")
 
 teach = "Take the following data, time and text respectively, and identify the important most relevant time intervals in the video: "
 time_intervals = []
-
-for i in range(len(video_ids)):
-    time_intervals.append(generate_text(PROJECT_ID, REGION, str(np.array((timestamp, text))), teach))
+for i in range(len(video_urls)):
+    time_intervals.append(generate_text(PROJECT_ID, REGION, str(np.array((timestamps[i], texts[i]))), teach))
 
 pprint(time_intervals)
 
-teach = "Find the video/s and time interval/s mentioned in the response given in the following format: Video 1: Time interval 6-10, Video 2: Time interval 5-10, etc."
+teach = "Find the video/s and time interval/s mentioned in the response given in the following format: Video num: Time interval start-end, For example: 'Video 2: Time interval 5-10'"
 
 while True:
     try:
-        video_time_string = (generate_text(PROJECT_ID, REGION, input("Which video/s and time interval/s would you like to watch?: "), teach))
-
-        video_time_list = video_time_string.split(', ')
+        #video_time_string = (generate_text(PROJECT_ID, REGION, input("Which video/s and time interval/s would you like to watch?: "), teach))
+        # video_time_list = video_time_string.split(', ')
+        video_time_string = input("Which video/s and time interval/s would you like to watch? (format: Video num: Time interval start-end): ")
         result_list = []
+        print(video_time_string)
+        video_info = video_time_string.split(': ')
+        print(video_info)
+        video_number_str = video_info[0].replace('Video ', '')
+        time_interval_str = video_info[1].replace('Time interval ', '')
+        print("aaa")
+ 
+        try:
+            # Try to convert the video number to an integer
+            vid_num = int(video_number_str)
+            print("bbb")
+        except ValueError:
+            print(f"Error: Invalid video number format - {video_number_str}")
+            continue
 
-        for video_time in video_time_list:
-            video_info = video_time.split(': ')
-            video_number = int(video_info[0].replace('Video ', ''))
-            time_interval = list(map(int, video_info[1].replace('Time interval ', '').split('-')))
-            result_list.append([video_number, time_interval])
+        # Split the time interval string and convert to integers
+        time_interval = time_interval_str.split('-')
+        try:
+            start_time = int(time_interval[0])
+            end_time = int(time_interval[1])
+            print("ccc")
+        except (ValueError, IndexError):
+            print(f"Error: Invalid time interval format - {time_interval_str}")
+            continue
+
+        # Add to the result list
+        result_list = [vid_num-1, [start_time, end_time]]
+
     except Exception as e:
         print(e)
-        print("Sorry, I'm not sure I understand. Maybe be more specific.")
+        print("Sorry, I'm not sure I understand. Maybe be more specific (Preferably in the format of 'Video 1: Time interval 1-10').")
     else:
         break
 
-print(result_list)    
+print(result_list)
+final_list = []
+url = video_urls[result_list[0]] + "&t=" + str(result_list[1][0])
+end = result_list[1][1]
+final_list.append([url, end])
+print(final_list)
