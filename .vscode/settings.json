@@ -1,4 +1,5 @@
 {
     "terminal.integrated.enableImages": true,
-    "terminal.integrated.gpuAcceleration": "on"
+    "terminal.integrated.gpuAcceleration": "on",
+    "cmake.configureOnOpen": true
 }

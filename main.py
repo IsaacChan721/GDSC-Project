@@ -1,3 +1,9 @@
+PROJECT_ID = "vital-domain-412522"
+REGION = "us-central1"
+
+
+import vertexai
+from vertexai.preview.generative_models import GenerativeModel, Part
 import webbrowser
 from googleapiclient.discovery import build
 from settings import API_KEY
@@ -5,6 +11,41 @@ from settings import API_KEY
 MAX_DURATION = 1200
 MIN_VIEW_COUNT = 100000
 
+user_input = input("Give me something to work with?: ")
+
+def generate_text(project_id: str, location: str, user_input, simplify = False) -> str:
+    # Initialize Vertex AI
+    vertexai.init(project=project_id, location=location)
+    # Load the model
+    multimodal_model = GenerativeModel("gemini-pro")
+    # Query the model
+    response = multimodal_model.generate_content(
+        [
+            user_input if not simplify
+            else "Create a list in python format of words containing the 5 most prominent key words using the following string: " + user_input
+        ]
+    )
+    return response.text
+
+def string_to_list(context:str):
+    list = []
+    first_pointer = -1
+    for i in range(len(context)):
+        if context[i] == "'" or context[i] == '"':
+            pointer = i
+            if first_pointer == -1:
+                first_pointer = pointer
+            else: 
+                list.append(context[first_pointer+1:pointer])
+                first_pointer = -1
+    return list
+
+
+results = generate_text(PROJECT_ID, REGION, user_input)
+context = generate_text(PROJECT_ID, REGION, results, True)
+
+context = string_to_list(context)
+print(context)
 
 def get_video(video_id, api_key):
     youtube = build('youtube', 'v3', developerKey=api_key)
@@ -31,7 +72,7 @@ youtube = build('youtube', 'v3', developerKey=API_KEY)
 
 
 response = youtube.search().list(
-    q='large,language,model,trained,google',
+    q= context,
     part='id,snippet',
     maxResults=10
 ).execute()
