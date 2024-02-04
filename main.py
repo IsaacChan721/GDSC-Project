@@ -1,17 +1,19 @@
 PROJECT_ID = "vital-domain-412522"
 REGION = "us-central1"
 
-
 import vertexai
 from vertexai.preview.generative_models import GenerativeModel, Part
 import webbrowser
 from googleapiclient.discovery import build
 from settings import API_KEY
+from pprint import pprint
+from youtube_transcript_api import YouTubeTranscriptApi as yta
+import re
+import numpy
 
 MAX_DURATION = 1200
 MIN_VIEW_COUNT = 100000
 
-user_input = input("Give me something to work with?: ")
 
 def generate_text(project_id: str, location: str, user_input, simplify = False) -> str:
     # Initialize Vertex AI
@@ -43,7 +45,7 @@ def string_to_list(context:str):
 def get_video(video_id, api_key):
     youtube = build('youtube', 'v3', developerKey=api_key)
     response = youtube.videos().list(
-        part='contentDetails,statistics',
+        part='contentDetails,statistics,snippet',
         id=video_id
     ).execute()
     return response
@@ -60,34 +62,56 @@ def get_video_duration(video):
 def get_video_view_count(video):
     return int(video["items"][0]["statistics"]["viewCount"])
 
-def main():
-    results = generate_text(PROJECT_ID, REGION, user_input)
-    context = generate_text(PROJECT_ID, REGION, results, True)
+def get_video_transcript(video_id):
+    transcript = yta.get_transcript(video_id, languages=('en', 'English')) 
+    text = numpy.array([dictionary["text"] for dictionary in transcript])
+    time = numpy.array([dictionary["start"] for dictionary in transcript])
 
-    context = string_to_list(context)
-    print(context)
+    merged_text = []
+    temp_text = ""
+    merged_time = [0]
 
-    youtube = build('youtube', 'v3', developerKey=API_KEY)
+    for i in range (0, len(text)):
+        if i % 5 == 0 and i != 0:
+            merged_text.append(temp_text)
+            merged_time.append(round(time[i], 3))
+            temp_text = text[i]
+        else:
+            temp_text += (" " + text[i])
+    merged_text.append(temp_text)
+    return merged_text, merged_time
 
-    response = youtube.search().list(
-        q= context,
-        part='id,snippet',
-        maxResults=10
-    ).execute()
+#def main():
+user_input = input("Give me something to work with?: ")
+results = generate_text(PROJECT_ID, REGION, user_input)
+context = generate_text(PROJECT_ID, REGION, results)
 
-    video_ids = [item['id']['videoId'] for item in response['items'] if item['id']['kind'] == 'youtube#video']
+context = string_to_list(context)
+print(context)
 
-    video_urls = []
-    for video_id in video_ids:
-        video  = get_video(video_id, API_KEY)
-        duration_seconds = get_video_duration(video)
-        view_count = get_video_view_count(video)
+youtube = build('youtube', 'v3', developerKey=API_KEY)
 
-        if duration_seconds <= MAX_DURATION and view_count >= MIN_VIEW_COUNT:
-            video_url = f"https://www.youtube.com/watch?v={video_id}"
-            video_urls.append(video_url)
-    print("video count:", len(video_urls))
+response = youtube.search().list(
+    q= context,
+    part='id,snippet',
+    maxResults=5
+).execute()
 
-    for url in video_urls:
-        webbrowser.open(url)
-    return video_urls
+video_ids = [item['id']['videoId'] for item in response['items'] if item['id']['kind'] == 'youtube#video']
+
+video_urls = []
+for video_id in video_ids:
+    print(video_id)
+    video  = get_video(video_id, API_KEY)
+    duration_seconds = get_video_duration(video)
+    view_count = get_video_view_count(video)
+
+    if duration_seconds <= MAX_DURATION and view_count >= MIN_VIEW_COUNT:
+        print("good vid")
+        text, timestamp = get_video_transcript(video_id)
+        print(text)
+        video_url = f"https://www.youtube.com/watch?v={video_id}"
+        video_urls.append(video_url)
+print("video count:", len(video_urls))
+
+#return video_urls
