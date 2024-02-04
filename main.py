@@ -8,24 +8,23 @@ from googleapiclient.discovery import build
 from settings import API_KEY
 from pprint import pprint
 from youtube_transcript_api import YouTubeTranscriptApi as yta
+from youtube_transcript_api._transcripts import TranscriptListFetcher
+from youtube_transcript_api._errors import TranscriptsDisabled, NoTranscriptAvailable, NoTranscriptFound
 import re
-import numpy
+import numpy as np
+import requests
 
 MAX_DURATION = 1200
 MIN_VIEW_COUNT = 100000
 
-
-def generate_text(project_id: str, location: str, user_input, simplify = False) -> str:
+def generate_text(project_id: str, location: str, user_input, teach="") -> str:
     # Initialize Vertex AI
     vertexai.init(project=project_id, location=location)
     # Load the model
     multimodal_model = GenerativeModel("gemini-pro")
     # Query the model
     response = multimodal_model.generate_content(
-        [
-            user_input if not simplify
-            else "Create a list in python format of words containing the 5 most prominent key words using the following string: " + user_input
-        ]
+        [teach + user_input]
     )
     return response.text
 
@@ -56,22 +55,33 @@ def get_video_duration(video):
     duration_parts = duration.split(':')
     duration_seconds = 0
     for i in range(len(duration_parts)):
+        if duration_parts[i] == '':
+            duration_parts[i] = 0
         duration_seconds += int(duration_parts[i]) * (60 ** (len(duration_parts) - i - 1))
     return duration_seconds
 
 def get_video_view_count(video):
     return int(video["items"][0]["statistics"]["viewCount"])
 
+def has_transcript(video_id):
+    t = TranscriptListFetcher(requests.Session())
+    try:
+        t._extract_captions_json(t._fetch_video_html(video_id), video_id)
+    except (TranscriptsDisabled, NoTranscriptAvailable, NoTranscriptFound):
+        #print("No transcripts")
+        return False
+    return True
+
 def get_video_transcript(video_id):
     transcript = yta.get_transcript(video_id, languages=('en', 'English')) 
-    text = numpy.array([dictionary["text"] for dictionary in transcript])
-    time = numpy.array([dictionary["start"] for dictionary in transcript])
+    text = np.array([dictionary["text"] for dictionary in transcript])
+    time = np.array([dictionary["start"] for dictionary in transcript])
 
     merged_text = []
     temp_text = ""
     merged_time = [0]
 
-    for i in range (0, len(text)):
+    for i in range(0, len(text)):
         if i % 5 == 0 and i != 0:
             merged_text.append(temp_text)
             merged_time.append(round(time[i], 3))
@@ -80,19 +90,20 @@ def get_video_transcript(video_id):
             temp_text += (" " + text[i])
     merged_text.append(temp_text)
     return merged_text, merged_time
+    
+# Main code
+# user_input = input("Give me something to work with?: ")
+# teach = "Create a list in python format of words containing the 5 most prominent key words using the following string: "
+# results = generate_text(PROJECT_ID, REGION, user_input)
+# context = generate_text(PROJECT_ID, REGION, results, teach)
 
-#def main():
-user_input = input("Give me something to work with?: ")
-results = generate_text(PROJECT_ID, REGION, user_input)
-context = generate_text(PROJECT_ID, REGION, results)
-
-context = string_to_list(context)
-print(context)
-
+# context = string_to_list(context)
+# print(context)
+context = ["red", "orange", "yellow", "green", "blue"]
 youtube = build('youtube', 'v3', developerKey=API_KEY)
 
 response = youtube.search().list(
-    q= context,
+    q=context,
     part='id,snippet',
     maxResults=5
 ).execute()
@@ -100,18 +111,32 @@ response = youtube.search().list(
 video_ids = [item['id']['videoId'] for item in response['items'] if item['id']['kind'] == 'youtube#video']
 
 video_urls = []
+# bad_videos = []
+
 for video_id in video_ids:
     print(video_id)
-    video  = get_video(video_id, API_KEY)
+    video = get_video(video_id, API_KEY)
     duration_seconds = get_video_duration(video)
     view_count = get_video_view_count(video)
-
-    if duration_seconds <= MAX_DURATION and view_count >= MIN_VIEW_COUNT:
+    text, timestamp = [], []
+    if duration_seconds <= MAX_DURATION and view_count >= MIN_VIEW_COUNT and has_transcript(video_id):
         print("good vid")
         text, timestamp = get_video_transcript(video_id)
         print(text)
         video_url = f"https://www.youtube.com/watch?v={video_id}"
         video_urls.append(video_url)
-print("video count:", len(video_urls))
+    else:
+        print("bad vid")
+        # bad_videos.append(video_id)
+
+# print("Videos with no transcript:", len(bad_videos))
+# print("Video count with transcript:", len(video_urls))
+
+# The rest of your code
+#merged_time, merged_text = get_video_transcript(video_ids[0])
+
+# teach = "Take the following data, time and text respectively, and identify the important time intervals in the video using the given context: " + str(context)
+# time_intervals = generate_text(PROJECT_ID, REGION, np.array((merged_time, merged_text)), teach)
+
 
 #return video_urls
