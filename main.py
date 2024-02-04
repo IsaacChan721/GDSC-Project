@@ -137,8 +137,7 @@ teach = "Take the following data, time and text respectively, and identify the i
 time_intervals = []
 
 for i in range(len(video_ids)):
-    merged_text, merged_time = get_video_transcript(video_ids[i])
-    time_intervals.append(generate_text(PROJECT_ID, REGION, str(np.array((merged_time, merged_text))), teach))
+    time_intervals.append(generate_text(PROJECT_ID, REGION, str(np.array((timestamp, text))), teach))
 
 pprint(time_intervals)
 
