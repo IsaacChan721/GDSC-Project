@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:youtube_player_iframe/youtube_player_iframe.dart';
 import 'package:flutter/cupertino.dart';
 import 'globals.dart';
+import 'package:flutter_chat_bubble/chat_bubble.dart';
 // import 'carousel.dart';
 
 List savedSessions = [];
@@ -78,33 +79,39 @@ SizedBox promptField(TextEditingController myController, Function mySetState) {
   );
 }
 
+Container messageChannel() {
+  return Container();
+}
+
 Container outputChannel(List videoIDs) {
   if (isSearching) {
     return Container(
-        child: Column(
-      children: [
-        const Expanded(
-          child: SizedBox(),
-        ),
-        Container(
-          width: 200,
-          height: 200,
-          child: AspectRatio(
-            aspectRatio: 1,
-            child: CircularProgressIndicator(
-              color: Colors.red[300],
+        child: Padding(
+      padding: const EdgeInsets.fromLTRB(0, 0, 0, 20),
+      child: Column(
+        children: [
+          const Expanded(
+            child: SizedBox(),
+          ),
+          Container(
+            width: 200,
+            height: 200,
+            child: AspectRatio(
+              aspectRatio: 1,
+              child: CircularProgressIndicator(
+                color: Colors.red[300],
+              ),
             ),
           ),
-        ),
-        const Expanded(
-          child: SizedBox(),
-        ),
-      ],
+          Expanded(
+              child: messageBubble(
+                  "Contextualizing Data... We'll Find Your Video Soon! Sit Tight :)"))
+        ],
+      ),
     ));
   }
 
   if (videoIDs.isNotEmpty && !savedSessions.contains(videoIDs)) {
-
     // List<Widget> videoWidgets = [];
     // for (String vID in videoIDs) {
     //   videoWidgets.add(youtubeEmbed(vID, 0, 50));
@@ -113,7 +120,10 @@ Container outputChannel(List videoIDs) {
     savedSessions.add(videoIDs);
 
     return Container(
-        width: 800, child: youtubeEmbed(videoIDs[0].split('=')[1], 0, 40)
+        width: 800, child: Padding(
+          padding: const EdgeInsets.fromLTRB(0, 0, 0, 16),
+          child: youtubeEmbed(videoIDs[0].split('=')[1], 0, 40),
+        )
         // child: videoCarousel(videoWidgets),
         );
   }
@@ -140,21 +150,20 @@ Column landingWelcome() {
                 color: Colors.black,
                 fontSize: 18,
                 fontWeight: FontWeight.w500)),
-      )
+      ),
     ],
   );
 }
 
 SizedBox youtubeEmbed(String videoID, double startSeconds, double endSeconds) {
   final myController = YoutubePlayerController(
-  params: const YoutubePlayerParams(
-    mute: false,
-    showControls: true,
-    showFullscreenButton: true,
-  ),
-);
-  myController.loadVideoById(
-      videoId: videoID);
+    params: const YoutubePlayerParams(
+      mute: false,
+      showControls: true,
+      showFullscreenButton: true,
+    ),
+  );
+  myController.loadVideoById(videoId: videoID);
   return SizedBox(
     width: 600,
     child: AspectRatio(
@@ -195,3 +204,19 @@ Opacity searchBtn(Function func) {
 void searchInProgress() {}
 
 void searchComplete() {}
+
+ChatBubble messageBubble(String message) {
+  return ChatBubble(
+    clipper: ChatBubbleClipper1(type: BubbleType.sendBubble),
+    alignment: Alignment.bottomRight,
+    margin: EdgeInsets.only(top: 20),
+    backGroundColor: Colors.blue,
+    child: Container(
+      width: 300,
+      child: Text(
+        message,
+        style: TextStyle(color: Colors.white),
+      ),
+    ),
+  );
+}

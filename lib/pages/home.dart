@@ -25,7 +25,14 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
       appBar: AppBar(
           backgroundColor: Colors.white,
-          title: Text(widget.title),
+          title: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(widget.title),
+              const SizedBox(width: 8),
+              const Icon(Icons.lightbulb_outline)
+            ],
+          ),
           centerTitle: true,
           bottom: PreferredSize(
               preferredSize: const Size.fromHeight(0.4),
